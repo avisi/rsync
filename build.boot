@@ -14,11 +14,11 @@
 (task-options!
  pom {:project     project
       :version     version
-      :description "FIXME: write description"
-      :url         "http://example/FIXME"
-      :scm         {:url "https://github.com/yourname/aws-s3-sync"}
-      :license     {"Eclipse Public License"
-                    "http://www.eclipse.org/legal/epl-v10.html"}})
+      :description "A Clojure library designed to sync files from one location to the other"
+      :url         "http://addons.avisi.com"
+      :scm         {:url "https://github.com/avisi/rsync"}
+      :license     {"The UnLicense"
+                    "https://unlicense.org/"}})
 
 (deftask build
   "Build and install the project locally."

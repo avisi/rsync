@@ -1,6 +1,7 @@
 # aws-s3-sync
 
 A Clojure library designed to sync files from one location to the other
+[![Clojars Project](https://img.shields.io/clojars/v/avisi/rsync.svg)](https://clojars.org/avisi/rsync)
 
 ## Usage
 
@@ -13,7 +14,7 @@ A Clojure library designed to sync files from one location to the other
 
 | protocol | example url |
 | --- | --- |
-|file | file:///tmp/put-it-here |
+| file | file:///tmp/put-it-here |
 | s3 | s3://my-bucket/my-object |
 
 ## Spec support
@@ -25,6 +26,7 @@ If you want to validate your input parameters, turn on spec support:
 (require '[avisi.rsync :as rsync])
 (stest/instrument `rsync/sync)
 ````
+
 
 ## License
 
