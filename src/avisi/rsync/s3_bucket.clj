@@ -55,8 +55,6 @@
   [prefix path]
   (str/join "/" (remove empty? [prefix path])))
 
-(keep )
-
 (defrecord S3Location [bucket prefix]
     l/Location
     (analyse [this]

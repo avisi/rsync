@@ -4,9 +4,6 @@
             [avisi.rsync.s3-bucket :as s3]
             [amazonica.aws.s3 :as aws-s3]
             [clojure.data :as data]
-            [clojure.spec :as s]
-            [clojure.spec.test :as stest]
-            [clojure.spec.gen :as gen]
             [clojure.string :as str]))
 
 (defn contains-path?
@@ -55,7 +52,6 @@
     {:deleted to-be-deleted
      :copied to-be-copied
      :updated to-be-updated}))
-
 
 (comment
   (aws-s3/get-object :bucket-name "dev-rfj-files" :key "/test-logo")
