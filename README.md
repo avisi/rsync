@@ -1,7 +1,6 @@
-# aws-s3-sync
+# Clojure rsync [![Clojars Project](https://img.shields.io/clojars/v/avisi/rsync.svg)](https://clojars.org/avisi/rsync)
 
-A Clojure library designed to sync files from one location to the other
-[![Clojars Project](https://img.shields.io/clojars/v/avisi/rsync.svg)](https://clojars.org/avisi/rsync)
+A Clojure library designed to sync files from one location to the other.
 
 ## Usage
 
