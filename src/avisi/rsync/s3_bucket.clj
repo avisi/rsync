@@ -20,52 +20,67 @@
 (defn analyse-s3-bucket
   "Pass a request map with :bucket-name and possibly a :prefix"
   [request]
-  (let [paths (->> (list-all-objects request)
-                   (filter #(not (str/ends-with? (:key %) "/"))) ;; filter folders
-                   (map #(select-keys % [:key :etag]))
-                   (map #(clojure.set/rename-keys % {:key :path :etag :md5})))]
+
+  ;; after listing the objects, reduce and restructure the information to conform to the spec
+  (let [paths (into []
+                    (comp (filter #(not (str/ends-with? (:key %) "/")))
+                          (map #(select-keys % [:key :etag :last-modified :size]))
+                          (map #(clojure.set/rename-keys % {:key :path :etag :md5 :last-modified :timestamp}))
+                          (map #(reduce-kv (fn [m k v]
+                                             (if (contains? #{:path :md5} k)
+                                               (assoc m k v)
+                                               (assoc-in m [:meta k] v)))
+                                           {} %)))
+                    (list-all-objects request))]
     (if (str/blank? (:prefix request))
       (set paths)
       (set (map #(assoc-in % [:path] (subs (:path %) (inc (count (:prefix request))))) paths)))))
+
+(analyse-s3-bucket {:bucket-name "gerstree"})
 
 (defn delete
   [bucket key]
   (s3/delete-object bucket key))
 
 (defn write
-  [bucket key stream]
-  (s3/put-object :bucket-name bucket :key key :input-stream stream))
+  [bucket key stream meta-data]
+  (log/info "writing to key" key "meta data supplied " meta-data)
+  (let [s3-meta-data (-> meta-data
+                          (select-keys [:size])
+                          (clojure.set/rename-keys {:size :content-length}))]
+    (log/info "writing to key" key "with meta data" s3-meta-data)
+    (s3/put-object :bucket-name bucket :key key :input-stream stream :meta-data s3-meta-data)))
 
 (defn read
   [bucket key]
   (:input-stream (s3/get-object :bucket-name bucket :key key)))
 
 (defn s3-url->bucket-name
- [url]
+  [url]
   (as-> (second (str/split url #"://")) v
-    (first (str/split v #"/"))))
+        (first (str/split v #"/"))))
 
 (defn s3-url->key
- [url]
+  [url]
   (as-> (second (str/split url #"://")) v
-    (rest (str/split v #"/"))
-    (str/join "/" v)))
+        (rest (str/split v #"/"))
+        (str/join "/" v)))
 
 (defn prefix&path->key
   [prefix path]
   (str/join "/" (remove empty? [prefix path])))
 
 (defrecord S3Location [bucket prefix]
-    l/Location
-    (analyse [this]
-      (analyse-s3-bucket {:bucket-name bucket :prefix prefix}))
-    (delete [this path]
-      (delete bucket (prefix&path->key prefix path)))
-    (read [this path]
-      (log/info "attempting to read path" path "prefix is" prefix)
-      (read bucket (prefix&path->key prefix path)))
-    (write [this path stream]
-      (write bucket (prefix&path->key prefix path) stream)))
+  l/Location
+  (analyse [this]
+    (analyse-s3-bucket {:bucket-name bucket :prefix prefix}))
+  (delete [this path]
+    (delete bucket (prefix&path->key prefix (:path path))))
+  (read [this path]
+    (log/info "attempting to read path" (:path path) "prefix is" prefix)
+    (read bucket (prefix&path->key prefix (:path path))))
+  (write [this path stream]
+    (write bucket (prefix&path->key prefix (:path path)) stream (:meta path))))
 
 (defn new-s3-location
   [bucket prefix]

@@ -3,6 +3,7 @@
             [avisi.rsync.local-dir :as dir]
             [avisi.rsync.s3-bucket :as s3]
             [amazonica.aws.s3 :as aws-s3]
+            [clojure.tools.logging :as log]
             [clojure.data :as data]
             [clojure.string :as str]))
 
@@ -20,13 +21,14 @@
 
 (defn left-to-right
   [paths left-location right-location]
-  (doseq [{path :path} paths]
+  (doseq [path paths]
+    (log/info "copying file" path)
     (with-open [input-stream (l/read left-location path)]
       (l/write right-location path input-stream))))
 
 (defn delete
   [paths location]
-  (doseq [{path :path} paths]
+  (doseq [path paths]
     (l/delete location path)))
 
 (defn dry-run?
@@ -38,25 +40,23 @@
   [from-url to-url options]
   (let [from-location (location from-url)
         to-location (location to-url)
+        _ (log/info "analysing from location")
         from-set (l/analyse from-location)
+        _ (log/info "analysing to location")
         to-set (l/analyse to-location)
+        _ (log/info "diffing results")
         diff (data/diff from-set to-set)
         to-be-deleted (filter #(not (contains-path? (:path %) (first diff))) (second diff))
         to-be-copied (filter #(not (contains-path? (:path %) (second diff))) (first diff))
         to-be-updated (filter #(contains-path? (:path %) (second diff)) (first diff))]
     (if (not (dry-run? options))
       (do
+        (log/info "copying new files")
         (left-to-right to-be-copied from-location to-location)
+        (log/info "updating existing files")
         (left-to-right to-be-updated from-location to-location)
+        (log/info "deleting redundant files")
         (delete to-be-deleted to-location)))
     {:deleted to-be-deleted
      :copied to-be-copied
      :updated to-be-updated}))
-
-(comment
-  (aws-s3/get-object :bucket-name "dev-rfj-files" :key "/test-logo")
-  (clojure.spec.test/instrument)
-  (sync! "s3://dev-rfj-files" "file:///tmp/ff1" {:dry-run false})
-  (str/join "/" (filter #(not (nil? %)) ["koud" "whatever"]))
-  ()
-  (str/join "/" [nil "whatever"])) 

@@ -2,6 +2,7 @@
   (:require [avisi.rsync.location :as l]
             [clojure.string :as str]
             [clojure.java.io :as io]
+            [clojure.tools.logging :as log]
             [pandect.algo.md5 :as md5])
   (:import [java.io File]
            [java.util.regex Pattern]))
@@ -38,12 +39,18 @@
 
 (defn read
   [file-path]
+  (log/info "reading from" file-path)
   (io/input-stream (io/file file-path)))
 
 (defn write
   [file-path input-stream]
+  (io/make-parents file-path)
   (with-open [output-stream (io/output-stream (io/file file-path))]
     (io/copy input-stream output-stream)))
+
+(defn delete
+  [file-path]
+  (io/delete-file file-path))
 
 ;; Private Helper Functions
 
@@ -59,17 +66,21 @@
 (defn- path->file-details [root-path file]
   (let [absolute-path (.getAbsolutePath file)
         rel-path (relative-path root-path absolute-path)
-        md5 (md5/md5-file absolute-path)]
-    {:path rel-path :md5 md5}))
+        md5 (md5/md5-file absolute-path)
+        last-modified (.lastModified file)
+        size (.length file)]
+    {:path rel-path :md5 md5 :meta {:size size :timestamp last-modified}}))
 
 (defrecord DirectoryLocation [directory]
   l/Location
   (analyse [this]
     (analyse-local-directory directory))
   (write [this path stream]
-    (write (str directory "/" path) stream))
+    (write (str directory "/" (:path path)) stream))
   (read [this path]
-    (read (str directory "/" path))))
+    (read (str directory "/" (:path path))))
+  (delete [this path]
+    (delete (str directory "/" (:path path)))))
 
 (defn new-directory-location
   [directory]
