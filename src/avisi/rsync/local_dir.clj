@@ -39,11 +39,12 @@
 
 (defn read
   [file-path]
-  (log/info "reading from" file-path)
+  (log/debug "reading from" file-path)
   (io/input-stream (io/file file-path)))
 
 (defn write
   [file-path input-stream]
+  (log/debug "writing to" file-path)
   (io/make-parents file-path)
   (with-open [output-stream (io/output-stream (io/file file-path))]
     (io/copy input-stream output-stream)))
@@ -69,18 +70,18 @@
         md5 (md5/md5-file absolute-path)
         last-modified (.lastModified file)
         size (.length file)]
-    {:path rel-path :md5 md5 :meta {:size size :timestamp last-modified}}))
+    {:path rel-path :md5 md5 :meta {:size size}}))
 
 (defrecord DirectoryLocation [directory]
   l/Location
   (analyse [this]
     (analyse-local-directory directory))
-  (write [this path stream]
-    (write (str directory "/" (:path path)) stream))
-  (read [this path]
-    (read (str directory "/" (:path path))))
-  (delete [this path]
-    (delete (str directory "/" (:path path)))))
+  (write [this {:keys [path]} stream]
+    (write (str directory "/" path) stream))
+  (read [this {:keys [path]}]
+    (read (str directory "/" path)))
+  (delete [this {:keys [path]}]
+    (delete (str directory "/" path))))
 
 (defn new-directory-location
   [directory]

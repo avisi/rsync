@@ -22,7 +22,7 @@
 (defn left-to-right
   [paths left-location right-location]
   (doseq [path paths]
-    (log/info "copying file" path)
+    (log/debug "copying file" path)
     (with-open [input-stream (l/read left-location path)]
       (l/write right-location path input-stream))))
 
@@ -40,22 +40,22 @@
   [from-url to-url options]
   (let [from-location (location from-url)
         to-location (location to-url)
-        _ (log/info "analysing from location")
+        _ (log/debug "analysing from location")
         from-set (l/analyse from-location)
-        _ (log/info "analysing to location")
+        _ (log/debug "analysing to location")
         to-set (l/analyse to-location)
-        _ (log/info "diffing results")
+        _ (log/debug "diffing results")
         diff (data/diff from-set to-set)
         to-be-deleted (filter #(not (contains-path? (:path %) (first diff))) (second diff))
         to-be-copied (filter #(not (contains-path? (:path %) (second diff))) (first diff))
         to-be-updated (filter #(contains-path? (:path %) (second diff)) (first diff))]
     (if (not (dry-run? options))
       (do
-        (log/info "copying new files")
+        (log/debug "copying new files")
         (left-to-right to-be-copied from-location to-location)
-        (log/info "updating existing files")
+        (log/debug "updating existing files")
         (left-to-right to-be-updated from-location to-location)
-        (log/info "deleting redundant files")
+        (log/debug "deleting redundant files")
         (delete to-be-deleted to-location)))
     {:deleted to-be-deleted
      :copied to-be-copied

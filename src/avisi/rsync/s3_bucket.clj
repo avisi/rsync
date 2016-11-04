@@ -24,7 +24,7 @@
   ;; after listing the objects, reduce and restructure the information to conform to the spec
   (let [paths (into []
                     (comp (filter #(not (str/ends-with? (:key %) "/")))
-                          (map #(select-keys % [:key :etag :last-modified :size]))
+                          (map #(select-keys % [:key :etag :size]))
                           (map #(clojure.set/rename-keys % {:key :path :etag :md5 :last-modified :timestamp}))
                           (map #(reduce-kv (fn [m k v]
                                              (if (contains? #{:path :md5} k)
@@ -36,19 +36,17 @@
       (set paths)
       (set (map #(assoc-in % [:path] (subs (:path %) (inc (count (:prefix request))))) paths)))))
 
-(analyse-s3-bucket {:bucket-name "gerstree"})
-
 (defn delete
   [bucket key]
   (s3/delete-object bucket key))
 
 (defn write
   [bucket key stream meta-data]
-  (log/info "writing to key" key "meta data supplied " meta-data)
+  (log/debug "writing to key" key "meta data supplied" meta-data)
   (let [s3-meta-data (-> meta-data
                           (select-keys [:size])
                           (clojure.set/rename-keys {:size :content-length}))]
-    (log/info "writing to key" key "with meta data" s3-meta-data)
+    (log/debug "writing to key" key "with meta data" s3-meta-data)
     (s3/put-object :bucket-name bucket :key key :input-stream stream :meta-data s3-meta-data)))
 
 (defn read
@@ -74,13 +72,13 @@
   l/Location
   (analyse [this]
     (analyse-s3-bucket {:bucket-name bucket :prefix prefix}))
-  (delete [this path]
-    (delete bucket (prefix&path->key prefix (:path path))))
-  (read [this path]
-    (log/info "attempting to read path" (:path path) "prefix is" prefix)
-    (read bucket (prefix&path->key prefix (:path path))))
-  (write [this path stream]
-    (write bucket (prefix&path->key prefix (:path path)) stream (:meta path))))
+  (delete [this file]
+    (delete bucket (prefix&path->key prefix (:path file))))
+  (read [this file]
+    (log/debug "attempting to read file" (:path file) "prefix is" prefix)
+    (read bucket (prefix&path->key prefix (:path file))))
+  (write [this file stream]
+    (write bucket (prefix&path->key prefix (:path file)) stream (:meta file))))
 
 (defn new-s3-location
   [bucket prefix]
