@@ -3,10 +3,11 @@
 
 (set-env! :resource-paths #{"resources" "src"}
           :source-paths   #{"test"}
-          :dependencies   '[[org.clojure/clojure "1.9.0-alpha11"]
+          :dependencies   '[[org.clojure/clojure "1.9.0-alpha13"]
+                            [clj-time "0.12.2"]
                             [pandect "0.6.0"]
-                            [com.amazonaws/aws-java-sdk-s3 "1.10.61"]
-                            [amazonica "0.3.76" :exclusions [org.clojure/clojure]]
+                            [com.amazonaws/aws-java-sdk-s3 "1.11.50"]
+                            [amazonica "0.3.77" :exclusions [org.clojure/clojure]]
                             [org.clojure/test.check "0.9.0" :scope "test"]
                             [org.clojure/tools.logging "0.3.1"]
                             [adzerk/boot-test "RELEASE" :scope "test"]])
